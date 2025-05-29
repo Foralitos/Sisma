@@ -10,16 +10,16 @@ export const dynamic = "force-dynamic";
 // GET /api/admin/users
 export async function GET(req) {
   try {
-    console.log("🔍 Fetching users...");
+    console.info("🔍 Fetching users...");
     const session = await getServerSession(authOptions);
 
     if (!session?.user || session.user.role !== "admin") {
-      console.log("❌ Unauthorized access attempt");
+      console.info("❌ Unauthorized access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectMongo();
-    console.log("📡 MongoDB connected");
+    console.info("📡 MongoDB connected");
 
     // Get URL parameters
     const { searchParams } = new URL(req.url);
@@ -47,7 +47,7 @@ export async function GET(req) {
 
     const total = await User.countDocuments(query);
 
-    console.log(`✅ Found ${users.length} users`);
+    console.info(`✅ Found ${users.length} users`);
     return NextResponse.json({
       data: users,
       pagination: {
@@ -68,11 +68,11 @@ export async function GET(req) {
 // POST /api/admin/users
 export async function POST(req) {
   try {
-    console.log("📝 Creating new user...");
+    console.info("📝 Creating new user...");
     const session = await getServerSession(authOptions);
 
     if (!session?.user || session.user.role !== "admin") {
-      console.log("❌ Unauthorized access attempt");
+      console.info("❌ Unauthorized access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -81,7 +81,7 @@ export async function POST(req) {
 
     // Basic validations
     if (!name || !email) {
-      console.log("❌ Missing required fields");
+      console.info("❌ Missing required fields");
       return NextResponse.json(
         { error: "Name and email are required" },
         { status: 400 }
@@ -91,17 +91,17 @@ export async function POST(req) {
     // Validate role
     const validRoles = ["user", "admin", "editor", "moderator"];
     if (role && !validRoles.includes(role)) {
-      console.log("❌ Invalid role:", role);
+      console.info("❌ Invalid role:", role);
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
     await connectMongo();
-    console.log("📡 MongoDB connected");
+    console.info("📡 MongoDB connected");
 
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log("❌ Email already exists:", email);
+      console.info("❌ Email already exists:", email);
       return NextResponse.json(
         { error: "Email already registered" },
         { status: 400 }
@@ -115,7 +115,7 @@ export async function POST(req) {
       role: role || "user",
     });
 
-    console.log("✅ User created successfully:", user._id);
+    console.info("✅ User created successfully:", user._id);
     return NextResponse.json({ data: user });
   } catch (error) {
     console.error("❌ Error creating user:", error);

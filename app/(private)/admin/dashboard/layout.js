@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import config from "@/config";
 import Sidebar from "./Sidebar";
+import MobileHeader from "./MobileHeader";
 
 // This is a server-side component to ensure the user is logged in and is an admin
 // If not, it will redirect to the login page.
@@ -26,12 +27,7 @@ export default async function LayoutAdminPrivate({ children }) {
       <div className="drawer-content">
         {/* Page content here */}
         <div className="p-4">
-          <label
-            htmlFor="my-drawer-2"
-            className="btn btn-primary drawer-button lg:hidden mx-8"
-          >
-            Open Menu
-          </label>
+          <MobileHeader />
           {children}
         </div>
       </div>
