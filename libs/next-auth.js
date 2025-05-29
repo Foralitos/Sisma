@@ -3,6 +3,7 @@ import EmailProvider from "next-auth/providers/email";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import config from "@/config";
 import connectMongo from "./mongo";
+import User from "@/models/User";
 
 export const authOptions = {
   // Set any random key in .env.local
@@ -46,9 +47,38 @@ export const authOptions = {
   ...(connectMongo && { adapter: MongoDBAdapter(connectMongo) }),
 
   callbacks: {
-    session: async ({ session, token }) => {
+    async jwt({ token, user, trigger, session }) {
+      // Include user role in JWT token
+      if (user) {
+        token.role = user.role || "user";
+      }
+
+      // Refresh user data if session is updated
+      if (trigger === "update" && session?.user) {
+        try {
+          const dbUser = await User.findById(token.sub);
+          if (dbUser) {
+            token.role = dbUser.role || "user";
+          }
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        }
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
       if (session?.user) {
         session.user.id = token.sub;
+
+        // Always fetch fresh role from database
+        try {
+          const dbUser = await User.findById(token.sub);
+          session.user.role = dbUser?.role || "user";
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+          session.user.role = token.role || "user";
+        }
       }
       return session;
     },
