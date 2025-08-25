@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/next-auth";
+import { auth } from "@/libs/auth";
 import config from "@/config";
 import Sidebar from "./Sidebar";
 import MobileHeader from "./MobileHeader";
@@ -9,7 +8,7 @@ import MobileHeader from "./MobileHeader";
 // If not, it will redirect to the login page.
 // It's applied to all subpages of /admin/dashboard in /app/dashboard/*** pages
 export default async function LayoutAdminPrivate({ children }) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   console.log(session);
 

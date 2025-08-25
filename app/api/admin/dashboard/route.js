@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/libs/next-auth";
+import { auth } from "@/libs/auth";
 import User from "@/models/User";
 import connectMongo from "@/libs/mongoose";
 
@@ -10,7 +9,7 @@ export const dynamic = "force-dynamic";
 // This route is used to get data for the admin dashboard
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

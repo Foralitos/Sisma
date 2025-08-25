@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/libs/next-auth";
+import { auth } from "@/libs/auth";
 import connectMongo from "@/libs/mongoose";
 import User from "@/models/User";
 
@@ -11,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req, { params }) {
   try {
     console.log("🔍 Fetching user...");
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user || session.user.role !== "admin") {
       console.log("❌ Unauthorized access attempt");
@@ -50,7 +49,7 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   try {
     console.log("📝 Updating user...");
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user || session.user.role !== "admin") {
       console.log("❌ Unauthorized access attempt");
