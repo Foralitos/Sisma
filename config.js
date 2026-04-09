@@ -1,9 +1,8 @@
 const config = {
   // REQUIRED
-  appName: "ShipFast",
+  appName: "Sisma",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
-  appDescription:
-    "The NextJS boilerplate with all you need to build your SaaS, AI tool, or any other web app.",
+  appDescription: "",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
   domainName: "shipfa.st",
   crisp: {
