@@ -4,6 +4,15 @@ import { useState } from "react";
 
 const ROLES = [
   {
+    id: "ciudadano",
+    label: "Ciudadano",
+    emoji: "🧑",
+    description: "Reporta emergencias desde tu ubicación y ve hospitales disponibles cerca de ti",
+    color: "border-purple-500 hover:bg-purple-50",
+    selectedColor: "border-purple-500 bg-purple-50",
+    badge: "badge-secondary",
+  },
+  {
     id: "ambulancia",
     label: "Ambulancia",
     emoji: "🚑",
@@ -81,7 +90,7 @@ export default function RoleSelector() {
         </div>
 
         {/* Role cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ROLES.map((role) => {
             const isSelected = selected === role.id;
             const isDisabled = loading && !isSelected;

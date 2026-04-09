@@ -3,7 +3,7 @@ import { auth } from "@/libs/auth";
 import connectMongo from "@/libs/mongoose";
 import User from "@/models/User";
 
-const VALID_ROLES = ["hospital", "ambulancia", "policia", "bomberos"];
+const VALID_ROLES = ["hospital", "ambulancia", "policia", "bomberos", "ciudadano"];
 
 export async function PATCH(req) {
   try {

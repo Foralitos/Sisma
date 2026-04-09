@@ -10,6 +10,13 @@ import {
   MapControls,
 } from "@/components/ui/map";
 
+const INCIDENT_WARNINGS = {
+  road_blocked:      { color: "#eab308", label: "Vialidad bloqueada", emoji: "🚧" },
+  structural_damage: { color: "#78716c", label: "Zona de derrumbe",   emoji: "🏚️" },
+  gas_leak:          { color: "#a855f7", label: "Fuga de gas",         emoji: "💨" },
+  evacuation_zone:   { color: "#3b82f6", label: "Zona de evacuación",  emoji: "🚨" },
+};
+
 const CAPACITY_CONFIG = {
   available: { color: "#22c55e", label: "Disponible", emoji: "🟢", borderColor: "border-l-green-500",  badgeBg: "bg-green-900/60 text-green-300" },
   partial:   { color: "#eab308", label: "Saturado",   emoji: "🟡", borderColor: "border-l-yellow-500", badgeBg: "bg-yellow-900/60 text-yellow-300" },
@@ -25,9 +32,20 @@ const CARD_BORDER = {
 
 export default function AmbulanceDashboard() {
   const [hospitals, setHospitals]   = useState([]);
+  const [warnings, setWarnings]     = useState([]);
   const [myLocation, setMyLocation] = useState(null);
   const [lastOpened, setLastOpened] = useState(null);
   const [error, setError]           = useState(null);
+
+  // Cargar warnings de incidentes al montar
+  useEffect(() => {
+    fetch("/api/incidents")
+      .then((r) => r.json())
+      .then((all) =>
+        setWarnings(all.filter((i) => i.type in INCIDENT_WARNINGS))
+      )
+      .catch(() => {});
+  }, []);
 
   // Cargar hospitales al montar
   useEffect(() => {
@@ -46,19 +64,32 @@ export default function AmbulanceDashboard() {
     );
   }, []);
 
-  // Pusher: actualizaciones de capacidad en tiempo real
+  // Pusher: actualizaciones en tiempo real (hospitales + incidentes)
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
     });
-    const channel = pusher.subscribe("hospitals");
-    channel.bind("capacity-updated", (data) => {
+
+    const chH = pusher.subscribe("hospitals");
+    chH.bind("capacity-updated", (data) => {
       setHospitals((prev) =>
         prev.map((h) => (h._id === data._id ? { ...h, ...data } : h))
       );
     });
+
+    const chI = pusher.subscribe("incidents");
+    chI.bind("incident-created", (inc) => {
+      if (inc.type in INCIDENT_WARNINGS) {
+        setWarnings((prev) => [inc, ...prev]);
+      }
+    });
+    chI.bind("incident-resolved", ({ _id }) => {
+      setWarnings((prev) => prev.filter((w) => w._id !== _id));
+    });
+
     return () => {
-      channel.unbind_all();
+      chH.unbind_all();
+      chI.unbind_all();
       pusher.disconnect();
     };
   }, []);
@@ -158,6 +189,27 @@ export default function AmbulanceDashboard() {
           )}
         </div>
 
+        {/* Advertencias de vialidades */}
+        {warnings.length > 0 && (
+          <div className="p-3 border-t">
+            <h3 className="font-bold text-xs text-warning mb-1.5">⚠️ Advertencias de ruta ({warnings.length})</h3>
+            <div className="flex flex-col gap-1">
+              {warnings.slice(0, 3).map((w) => {
+                const cfg = INCIDENT_WARNINGS[w.type];
+                return (
+                  <div key={w._id} className="bg-yellow-950/30 border border-yellow-900 rounded-lg p-2 text-xs">
+                    <span className="font-semibold text-yellow-400">{cfg.emoji} {cfg.label}</span>
+                    {w.notes && <p className="text-base-content/60 mt-0.5 italic">{w.notes}</p>}
+                  </div>
+                );
+              })}
+              {warnings.length > 3 && (
+                <p className="text-xs text-base-content/40 text-center">+{warnings.length - 3} más</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {error && <p className="text-error text-xs px-3 pb-3">{error}</p>}
       </aside>
 
@@ -174,6 +226,31 @@ export default function AmbulanceDashboard() {
               </MarkerContent>
             </MapMarker>
           )}
+
+          {/* Pins de advertencias (vialidades bloqueadas, derrumbes, etc.) */}
+          {warnings.map((w) => {
+            const cfg = INCIDENT_WARNINGS[w.type];
+            return (
+              <MapMarker key={`warn-${w._id}`} longitude={w.lng} latitude={w.lat}>
+                <MarkerContent>
+                  <div
+                    className="w-5 h-5 rounded-full border-2 border-white shadow-md flex items-center justify-center text-xs"
+                    style={{ backgroundColor: cfg.color }}
+                    title={cfg.label}
+                  />
+                </MarkerContent>
+                <MarkerPopup className="!bg-gray-950 !border-gray-700 !text-white !p-0 !shadow-2xl overflow-hidden min-w-[180px]">
+                  <div className="p-3 space-y-1">
+                    <p className="font-bold text-sm text-white">{cfg.emoji} {cfg.label}</p>
+                    {w.notes && <p className="text-xs text-gray-300 italic">{w.notes}</p>}
+                    <p className="text-xs text-gray-500">
+                      {new Date(w.createdAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            );
+          })}
 
           {/* Pins de hospitales */}
           {hospitals.map((h) => {

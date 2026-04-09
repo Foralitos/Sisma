@@ -11,6 +11,7 @@ export default async function Dashboard() {
   if (role === "ambulancia") redirect("/dashboard/ambulancia");
   if (role === "policia") redirect("/dashboard/policia");
   if (role === "bomberos") redirect("/dashboard/bomberos");
+  if (role === "ciudadano") redirect("/dashboard/ciudadano");
 
   // Fallback para admin/editor/moderator
   return (

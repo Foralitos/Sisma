@@ -20,7 +20,7 @@ const userSchema = mongoose.Schema(
     // Role-based access control
     role: {
       type: String,
-      enum: ["user", "admin", "editor", "moderator", "hospital", "ambulancia", "policia", "bomberos"],
+      enum: ["user", "admin", "editor", "moderator", "hospital", "ambulancia", "policia", "bomberos", "ciudadano"],
       default: "user",
     },
     // Used in the Stripe webhook to identify the user in Stripe and later create Customer Portal or prefill user credit card details
