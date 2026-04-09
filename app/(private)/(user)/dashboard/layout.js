@@ -14,5 +14,9 @@ export default async function LayoutPrivate({ children }) {
     redirect(config.auth.loginUrl);
   }
 
+  if (session.user.role === "user") {
+    redirect("/select-role");
+  }
+
   return <>{children}</>;
 }

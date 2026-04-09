@@ -1,17 +1,21 @@
-import ButtonAccount from "@/components/ButtonAccount";
+import { redirect } from "next/navigation";
+import { auth } from "@/libs/auth";
 
 export const dynamic = "force-dynamic";
 
-// This is a private page: It's protected by the layout.js component which ensures the user is authenticated.
-// It's a server compoment which means you can fetch data (like the user profile) before the page is rendered.
-// See https://shipfa.st/docs/tutorials/private-page
 export default async function Dashboard() {
+  const session = await auth();
+  const role = session?.user?.role;
+
+  if (role === "hospital") redirect("/dashboard/hospital");
+  if (role === "ambulancia") redirect("/dashboard/ambulancia");
+  if (role === "policia") redirect("/dashboard/policia");
+  if (role === "bomberos") redirect("/dashboard/bomberos");
+
+  // Fallback para admin/editor/moderator
   return (
-    <main className="min-h-screen p-8 pb-24">
-      <section className="max-w-xl mx-auto space-y-8">
-        <ButtonAccount />
-        <h1 className="text-3xl md:text-4xl font-extrabold">Private Page</h1>
-      </section>
+    <main className="min-h-screen p-8">
+      <h1 className="text-2xl font-bold">Dashboard — {role}</h1>
     </main>
   );
 }

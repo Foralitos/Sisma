@@ -104,3 +104,36 @@ Use `@/` absolute imports everywhere (configured in `jsconfig.json`). Never use 
 ```jsx
 {isLoading ? <span className="loading loading-spinner loading-xs" /> : "Label"}
 ```
+
+## Seismic Domain (Core Feature)
+
+This app is a seismic prediction platform for Mexico City (CDMX), powered by historical SSN-UNAM data (1990–2024).
+
+### Domain Models
+- **`models/Sismo.js`** — Seismic events with geospatial index (`ubicacion: "2dsphere"` using `[longitud, latitud]` GeoJSON Point). Coordinates are always stored as `[lon, lat]` (GeoJSON order), not `[lat, lon]`.
+- **`models/Prediccion.js`** — AI-generated risk predictions per zone and month. Risk levels: `ALTO`, `MEDIO-ALTO`, `MEDIO`, `BAJO`.
+
+### Seismic API Routes
+- `GET /api/sismos/query` — Query historical sismos by magnitude, date range, and optionally geospatial proximity (`latitud`, `longitud`, `radioKm`). Limit capped at 100.
+- `GET /api/sismos/stats` — Aggregated statistics: monthly patterns, top 10 active zones, magnitude distribution, yearly activity.
+- `POST /api/sismos/predictions` — Create a new prediction document. Accepts `nivelRiesgoGlobal`, `zonas[]` (with optional per-zone `prediccionesPorMes[]`), `periodoDesde`, `periodoHasta`, `resumenTexto`. Enriches zone coordinates by querying matching sismos from DB.
+- `GET /api/sismos/predictions` — Fetch the N most recent predictions (default: 1, max: 10).
+- `GET /api/sismos/openapi.json` — OpenAPI 3.0 spec for the query endpoint (used by IBM Orchestrate agent).
+
+### Prediction Map (`/mapa`)
+Server component fetches the latest `Prediccion` and passes it to `MapaCliente` (client). Map is rendered with **MapLibre GL** via `components/ui/map.jsx`, using CartoCDN tile styles (dark/light theme-aware). Each zone centroid becomes a colored pin; clicking shows a popup with risk level, expected magnitude, and statistical basis.
+
+### IBM Orchestrate Integration
+The OpenAPI spec at `/api/sismos/openapi.json` is consumed by an IBM Orchestrate agent that calls `/api/sismos/query` to retrieve historical data, then posts a structured prediction to `/api/sismos/predictions`. The `POST` endpoint is intentionally unauthenticated to allow the agent to write predictions.
+
+### Data Migration
+To seed the database from the SSN CSV file:
+```bash
+# Place SSNMX_catalogo_19900101_20241231_CDMX.csv in the project root, then:
+node scripts/import-sismos.mjs
+```
+The script reads `.env` / `.env.local` for `MONGODB_URI`, clears existing records, and bulk-inserts all events.
+
+### Dual MongoDB Clients
+- `libs/mongo.js` — Raw `MongoClient` promise, used only by NextAuth for the session adapter.
+- `libs/mongoose.js` — `connectMongo()` singleton using Mongoose; use this in all API routes.
