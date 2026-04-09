@@ -1,0 +1,269 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Sismos CDMX API",
+    "description": "Consulta sismos históricos y estadísticas de la Ciudad de México (1990-2024) para análisis predictivo.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    { "url": "https://vmydj3-ip-201-139-113-146.tunnelmole.net" }
+  ],
+  "paths": {
+    "/api/sismos/stats": {
+      "get": {
+        "operationId": "get_sismos_stats",
+        "summary": "Obtener estadísticas y patrones históricos de sismos en CDMX",
+        "description": "Devuelve patrones estadísticos completos: actividad por mes, zonas más activas, distribución por magnitud y tendencia anual. Usar SIEMPRE como primer paso para generar predicciones sísmicas.",
+        "responses": {
+          "200": {
+            "description": "Estadísticas y patrones históricos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resumen": {
+                      "type": "object",
+                      "properties": {
+                        "totalEventos": { "type": "integer" },
+                        "periodoAnios": { "type": "string" },
+                        "fuenteDatos": { "type": "string" }
+                      }
+                    },
+                    "patronesMensuales": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "mes": { "type": "integer" },
+                          "nombreMes": { "type": "string" },
+                          "totalSismos": { "type": "integer" },
+                          "magnitudPromedio": { "type": "number" },
+                          "magnitudMaxima": { "type": "number" }
+                        }
+                      }
+                    },
+                    "zonasmasActivas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "zona": { "type": "string" },
+                          "totalSismos": { "type": "integer" },
+                          "magnitudPromedio": { "type": "number" },
+                          "magnitudMaxima": { "type": "number" }
+                        }
+                      }
+                    },
+                    "distribucionMagnitud": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rangoMagnitud": { "type": "string" },
+                          "totalSismos": { "type": "integer" }
+                        }
+                      }
+                    },
+                    "actividadAnual": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "anio": { "type": "integer" },
+                          "totalSismos": { "type": "integer" },
+                          "magnitudPromedio": { "type": "number" },
+                          "magnitudMaxima": { "type": "number" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sismos/query": {
+      "get": {
+        "operationId": "query_sismos",
+        "summary": "Consultar sismos históricos específicos de CDMX",
+        "description": "Recupera sismos filtrados por magnitud, fechas y proximidad geográfica. Usar para profundizar en zonas o períodos específicos después de analizar las estadísticas generales.",
+        "parameters": [
+          {
+            "name": "magnitudMin",
+            "in": "query",
+            "required": false,
+            "description": "Magnitud mínima (default: 0)",
+            "schema": { "type": "number", "example": 2.5 }
+          },
+          {
+            "name": "magnitudMax",
+            "in": "query",
+            "required": false,
+            "description": "Magnitud máxima (default: 10)",
+            "schema": { "type": "number", "example": 5.0 }
+          },
+          {
+            "name": "fechaDesde",
+            "in": "query",
+            "required": false,
+            "description": "Fecha inicio YYYY-MM-DD (default: 1990-01-01)",
+            "schema": { "type": "string", "example": "2010-01-01" }
+          },
+          {
+            "name": "fechaHasta",
+            "in": "query",
+            "required": false,
+            "description": "Fecha fin YYYY-MM-DD (default: hoy)",
+            "schema": { "type": "string", "example": "2024-12-31" }
+          },
+          {
+            "name": "latitud",
+            "in": "query",
+            "required": false,
+            "description": "Latitud para búsqueda geoespacial",
+            "schema": { "type": "number", "example": 19.43 }
+          },
+          {
+            "name": "longitud",
+            "in": "query",
+            "required": false,
+            "description": "Longitud para búsqueda geoespacial",
+            "schema": { "type": "number", "example": -99.13 }
+          },
+          {
+            "name": "radioKm",
+            "in": "query",
+            "required": false,
+            "description": "Radio en km (default: 50)",
+            "schema": { "type": "number", "example": 30 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Máx. resultados, tope 100 (default: 20)",
+            "schema": { "type": "integer", "example": 10 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de sismos encontrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": { "type": "integer" },
+                    "sismos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fecha": { "type": "string", "format": "date-time" },
+                          "magnitud": { "type": "number" },
+                          "latitud": { "type": "number" },
+                          "longitud": { "type": "number" },
+                          "profundidad": { "type": "number" },
+                          "referenciaLocalizacion": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sismos/predictions": {
+      "post": {
+        "operationId": "guardar_prediccion_sismica",
+        "summary": "Guardar predicción sísmica en MongoDB",
+        "description": "Llama este endpoint AL FINAL del análisis para persistir la predicción con zonas de riesgo por mes. El sistema asignará automáticamente los colores y coordenadas geográficas basándose en datos históricos reales.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nivelRiesgoGlobal", "zonas"],
+                "properties": {
+                  "periodoDesde": {
+                    "type": "string",
+                    "description": "Inicio del período predicho en formato YYYY-MM-DD",
+                    "example": "2026-04-01"
+                  },
+                  "periodoHasta": {
+                    "type": "string",
+                    "description": "Fin del período predicho en formato YYYY-MM-DD",
+                    "example": "2026-06-30"
+                  },
+                  "nivelRiesgoGlobal": {
+                    "type": "string",
+                    "description": "Nivel de riesgo global del período",
+                    "enum": ["ALTO", "MEDIO-ALTO", "MEDIO", "BAJO"]
+                  },
+                  "zonas": {
+                    "type": "array",
+                    "description": "Lista de zonas de CDMX con su nivel de riesgo",
+                    "items": {
+                      "type": "object",
+                      "required": ["nombre", "nivelRiesgo"],
+                      "properties": {
+                        "nombre": {
+                          "type": "string",
+                          "description": "Nombre de la zona o alcaldía de CDMX (debe coincidir con referenciaLocalizacion del dataset)",
+                          "example": "TLALPAN"
+                        },
+                        "nivelRiesgo": {
+                          "type": "string",
+                          "enum": ["ALTO", "MEDIO-ALTO", "MEDIO", "BAJO"]
+                        },
+                        "magnitudEsperada": {
+                          "type": "number",
+                          "example": 3.2
+                        },
+                        "fundamentoEstadistico": {
+                          "type": "string",
+                          "description": "Justificación estadística de la predicción para esta zona"
+                        }
+                      }
+                    }
+                  },
+                  "resumenTexto": {
+                    "type": "string",
+                    "description": "Texto completo del reporte de predicción generado"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Predicción guardada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "predictionId": { "type": "string" },
+                    "mapUrl": { "type": "string" },
+                    "zonasProcesadas": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}
+
