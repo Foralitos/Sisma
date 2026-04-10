@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Pusher from "pusher-js";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 import {
   Map,
   MapMarker,
@@ -103,6 +105,57 @@ export default function AmbulanceDashboard() {
     window.open(url, "_blank");
   }
 
+  function startTour() {
+    driver({
+      showProgress: true,
+      nextBtnText: "Siguiente →",
+      prevBtnText: "← Anterior",
+      doneBtnText: "¡Entendido!",
+      steps: [
+        {
+          element: "#amb-header",
+          popover: {
+            title: "🚑 Panel de Hospitales",
+            description: "Aquí ves todos los hospitales de CDMX ordenados por disponibilidad. Los más libres aparecen primero para que llegues al mejor lugar.",
+            side: "right",
+          },
+        },
+        {
+          element: "#amb-lista",
+          popover: {
+            title: "🟢🟡🔴 Código de colores",
+            description: "Cada hospital tiene una franja de color: <b>Verde</b> = disponible, <b>Amarillo</b> = saturado, <b>Rojo</b> = lleno. Evita los rojos durante una emergencia.",
+            side: "right",
+          },
+        },
+        {
+          element: "#amb-warnings",
+          popover: {
+            title: "⚠️ Advertencias de ruta",
+            description: "Policía y bomberos reportan bloqueos y zonas peligrosas en tiempo real. Revisa esto antes de salir para elegir la mejor ruta.",
+            side: "right",
+          },
+        },
+        {
+          element: "#amb-mapa",
+          popover: {
+            title: "🗺️ Mapa en tiempo real",
+            description: "Los <b>círculos de colores</b> son hospitales (verde/amarillo/rojo según capacidad). Los otros pines son advertencias de vialidades bloqueadas o zonas de riesgo. Haz clic en cualquier pin para ver detalles y abrir la ruta en Google Maps.",
+            side: "left",
+          },
+        },
+      ],
+    }).drive();
+  }
+
+  useEffect(() => {
+    const yaVio = sessionStorage.getItem("sisma-tour-ambulancia");
+    if (!yaVio) {
+      setTimeout(startTour, 800);
+      sessionStorage.setItem("sisma-tour-ambulancia", "1");
+    }
+  }, []);
+
   const sortedHospitals = [...hospitals].sort((a, b) => {
     const order = { available: 0, partial: 1, full: 2 };
     return order[a.capacity] - order[b.capacity];
@@ -115,15 +168,18 @@ export default function AmbulanceDashboard() {
       <aside className="w-72 flex flex-col border-r bg-base-100 overflow-y-auto shrink-0">
 
         {/* Header */}
-        <div className="p-4 border-b sticky top-0 bg-base-100 z-10">
-          <h2 className="font-extrabold text-base">🚑 Hospitales CDMX</h2>
+        <div id="amb-header" className="p-4 border-b sticky top-0 bg-base-100 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="font-extrabold text-base">🚑 Hospitales CDMX</h2>
+            <button onClick={startTour} className="btn btn-ghost btn-xs gap-1" title="Ver guía">❓ Guía</button>
+          </div>
           <p className="text-xs text-base-content/50 mt-0.5">
             {myLocation ? "📍 Geolocalización activa" : "Sin geolocalización — actívala para rutas exactas"}
           </p>
         </div>
 
         {/* Lista */}
-        <div className="flex flex-col gap-2 p-3">
+        <div id="amb-lista" className="flex flex-col gap-2 p-3">
           {sortedHospitals.map((h) => {
             const cfg = CAPACITY_CONFIG[h.capacity] ?? CAPACITY_CONFIG.available;
             const isLast = lastOpened === h._id;
@@ -191,7 +247,7 @@ export default function AmbulanceDashboard() {
 
         {/* Advertencias de vialidades */}
         {warnings.length > 0 && (
-          <div className="p-3 border-t">
+          <div id="amb-warnings" className="p-3 border-t">
             <h3 className="font-bold text-xs text-warning mb-1.5">⚠️ Advertencias de ruta ({warnings.length})</h3>
             <div className="flex flex-col gap-1">
               {warnings.slice(0, 3).map((w) => {
@@ -214,7 +270,7 @@ export default function AmbulanceDashboard() {
       </aside>
 
       {/* ── Mapa ─────────────────────────────────────────────────────────── */}
-      <div className="flex-1">
+      <div id="amb-mapa" className="flex-1">
         <Map viewport={{ center: [-99.1332, 19.4326], zoom: 11 }} className="w-full h-full">
           <MapControls showZoom showCompass showLocate />
 

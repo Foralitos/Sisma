@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Pusher from "pusher-js";
 import IncidentMap from "@/components/dashboard/IncidentMap";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 const INCIDENT_TYPES = [
   { value: "structural_damage", label: "🏚️ Derrumbe" },
@@ -56,6 +58,57 @@ export default function BomberosDashboard() {
     return () => { ch.unbind_all(); pusher.disconnect(); };
   }, []);
 
+  function startTour() {
+    driver({
+      showProgress: true,
+      nextBtnText: "Siguiente →",
+      prevBtnText: "← Anterior",
+      doneBtnText: "¡Entendido!",
+      steps: [
+        {
+          element: "#bomb-header",
+          popover: {
+            title: "🚒 Dashboard Bomberos",
+            description: "Este es tu centro de operaciones. Ves alertas ciudadanas en tiempo real, puedes reportar incidentes y coordinar con otros servicios desde el mapa compartido.",
+            side: "right",
+          },
+        },
+        {
+          element: "#bomb-panics",
+          popover: {
+            title: "🆘 Pánicos ciudadanos",
+            description: "Cuando un ciudadano presiona el botón de emergencia, aparece aquí al instante con su ubicación. Haz clic en <b>Ir a rescatar</b> para abrir la ruta en Google Maps.",
+            side: "right",
+          },
+        },
+        {
+          element: "#bomb-form",
+          popover: {
+            title: "📡 Reportar incidente",
+            description: "Reporta derrumbes, incendios o fugas de gas desde tu ubicación GPS. El reporte aparece en el mapa de <b>todos los servicios</b> (policía, ambulancias) en tiempo real.",
+            side: "right",
+          },
+        },
+        {
+          element: "#bomb-mapa",
+          popover: {
+            title: "🗺️ Mapa compartido en tiempo real",
+            description: "<b>🔴 Pulsante</b>: pánico ciudadano (prioridad máxima) · <b>🏚️ Gris</b>: derrumbe · <b>🔥 Naranja</b>: incendio · <b>💨 Morado</b>: fuga de gas · <b>🚧 Amarillo</b>: vialidad bloqueada · <b>🟢/🟡/🔴 Hospital</b>: disponibilidad. Haz clic en cualquier pin para ver detalles y marcar como atendido.",
+            side: "left",
+          },
+        },
+      ],
+    }).drive();
+  }
+
+  useEffect(() => {
+    const yaVio = sessionStorage.getItem("sisma-tour-bomberos");
+    if (!yaVio) {
+      setTimeout(startTour, 800);
+      sessionStorage.setItem("sisma-tour-bomberos", "1");
+    }
+  }, []);
+
   async function submitReport(e) {
     e.preventDefault();
     if (!myLocation) {
@@ -95,15 +148,18 @@ export default function BomberosDashboard() {
       <aside className="w-80 flex flex-col border-r bg-base-100 overflow-y-auto shrink-0">
 
         {/* Header */}
-        <div className="p-4 border-b sticky top-0 bg-base-100 z-10">
-          <h2 className="font-extrabold text-base">🚒 Dashboard Bomberos</h2>
+        <div id="bomb-header" className="p-4 border-b sticky top-0 bg-base-100 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="font-extrabold text-base">🚒 Dashboard Bomberos</h2>
+            <button onClick={startTour} className="btn btn-ghost btn-xs gap-1" title="Ver guía">❓ Guía</button>
+          </div>
           <p className="text-xs text-base-content/50 mt-0.5">
             {myLocation ? "📍 Geolocalización activa" : "Sin geolocalización"}
           </p>
         </div>
 
         {/* Pánicos ciudadanos */}
-        <div className="p-3 border-b">
+        <div id="bomb-panics" className="p-3 border-b">
           <h3 className="font-bold text-sm flex items-center gap-2 mb-2">
             🆘 Pánicos ciudadanos
             {panics.length > 0 && (
@@ -143,7 +199,7 @@ export default function BomberosDashboard() {
         </div>
 
         {/* Formulario de reporte */}
-        <form onSubmit={submitReport} className="p-3 border-b space-y-3">
+        <form id="bomb-form" onSubmit={submitReport} className="p-3 border-b space-y-3">
           <h3 className="font-bold text-sm">Reportar incidente</h3>
 
           {/* Tipo */}
@@ -212,7 +268,7 @@ export default function BomberosDashboard() {
       </aside>
 
       {/* ── Mapa ─────────────────────────────────────────────────────────── */}
-      <div className="flex-1">
+      <div id="bomb-mapa" className="flex-1">
         <IncidentMap serviceType="bomberos" myLocation={myLocation} />
       </div>
     </div>

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Pusher from "pusher-js";
 import IncidentMap from "@/components/dashboard/IncidentMap";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 const INCIDENT_TYPES = [
   { value: "road_blocked",    label: "🚧 Vialidad bloqueada" },
@@ -58,6 +60,73 @@ export default function PolicíaDashboard() {
     return () => { ch.unbind_all(); pusher.disconnect(); };
   }, []);
 
+  function startTour() {
+    driver({
+      showProgress: true,
+      nextBtnText: "Siguiente →",
+      prevBtnText: "← Anterior",
+      doneBtnText: "¡Entendido!",
+      steps: [
+        {
+          element: "#pol-header",
+          popover: {
+            title: "👮 Dashboard Policía",
+            description: "Tu centro de operaciones durante el sismo. Ves pánicos ciudadanos, bloqueos viales activos y puedes reportar incidentes que afectan el tráfico y la seguridad.",
+            side: "right",
+          },
+        },
+        {
+          element: "#pol-counters",
+          popover: {
+            title: "📊 Contadores en vivo",
+            description: "Resumen rápido de cuántos <b>pánicos ciudadanos</b> y <b>vialidades bloqueadas</b> hay activos en este momento. Se actualiza solo en tiempo real.",
+            side: "right",
+          },
+        },
+        {
+          element: "#pol-panics",
+          popover: {
+            title: "🆘 Pánicos ciudadanos",
+            description: "Alertas de personas en peligro con ubicación GPS exacta. Usa <b>Ir a rescatar</b> para abrir la ruta directa en Google Maps y llegar en el menor tiempo posible.",
+            side: "right",
+          },
+        },
+        {
+          element: "#pol-vialidades",
+          popover: {
+            title: "🚧 Vialidades bloqueadas",
+            description: "Bloqueos y zonas de evacuación que tú u otras unidades han reportado. Las ambulancias también ven estos avisos para evitar rutas cortadas.",
+            side: "right",
+          },
+        },
+        {
+          element: "#pol-form",
+          popover: {
+            title: "📡 Reportar incidente",
+            description: "Reporta bloqueos o zonas de evacuación desde tu ubicación GPS actual. El reporte se comparte con <b>todos los servicios</b> al instante vía Pusher.",
+            side: "right",
+          },
+        },
+        {
+          element: "#pol-mapa",
+          popover: {
+            title: "🗺️ Mapa compartido en tiempo real",
+            description: "<b>🔴 Pulsante</b>: pánico ciudadano · <b>🚧 Amarillo</b>: vialidad bloqueada · <b>🚨 Azul</b>: zona de evacuación · <b>🏚️ Gris</b>: derrumbe · <b>🔥 Naranja</b>: incendio · <b>Hospital</b>: verde/amarillo/rojo según capacidad. Clic en cualquier pin para atenderlo o resolverlo.",
+            side: "left",
+          },
+        },
+      ],
+    }).drive();
+  }
+
+  useEffect(() => {
+    const yaVio = sessionStorage.getItem("sisma-tour-policia");
+    if (!yaVio) {
+      setTimeout(startTour, 800);
+      sessionStorage.setItem("sisma-tour-policia", "1");
+    }
+  }, []);
+
   async function submitReport(e) {
     e.preventDefault();
     if (!myLocation) {
@@ -97,15 +166,18 @@ export default function PolicíaDashboard() {
       <aside className="w-80 flex flex-col border-r bg-base-100 overflow-y-auto shrink-0">
 
         {/* Header */}
-        <div className="p-4 border-b sticky top-0 bg-base-100 z-10">
-          <h2 className="font-extrabold text-base">👮 Dashboard Policía</h2>
+        <div id="pol-header" className="p-4 border-b sticky top-0 bg-base-100 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="font-extrabold text-base">👮 Dashboard Policía</h2>
+            <button onClick={startTour} className="btn btn-ghost btn-xs gap-1" title="Ver guía">❓ Guía</button>
+          </div>
           <p className="text-xs text-base-content/50 mt-0.5">
             {myLocation ? "📍 Geolocalización activa" : "Sin geolocalización"}
           </p>
         </div>
 
         {/* Contadores */}
-        <div className="grid grid-cols-2 gap-2 p-3 border-b">
+        <div id="pol-counters" className="grid grid-cols-2 gap-2 p-3 border-b">
           <div className="bg-red-950/40 border border-red-800 rounded-lg p-3 text-center">
             <p className="text-2xl font-black text-red-400">{panics.length}</p>
             <p className="text-xs text-base-content/60 mt-0.5">Pánicos activos</p>
@@ -117,7 +189,7 @@ export default function PolicíaDashboard() {
         </div>
 
         {/* Feed de pánicos */}
-        <div className="p-3 border-b">
+        <div id="pol-panics" className="p-3 border-b">
           <h3 className="font-bold text-sm flex items-center gap-2 mb-2">
             🆘 Pánicos ciudadanos
             {panics.length > 0 && (
@@ -154,7 +226,7 @@ export default function PolicíaDashboard() {
         </div>
 
         {/* Feed de vialidades */}
-        <div className="p-3 border-b">
+        <div id="pol-vialidades" className="p-3 border-b">
           <h3 className="font-bold text-sm mb-2">🚧 Vialidades bloqueadas</h3>
           {roadBlocks.length === 0 ? (
             <p className="text-xs text-base-content/40 py-1">Sin bloqueos activos</p>
@@ -178,7 +250,7 @@ export default function PolicíaDashboard() {
         </div>
 
         {/* Formulario de reporte */}
-        <form onSubmit={submitReport} className="p-3 border-b space-y-3">
+        <form id="pol-form" onSubmit={submitReport} className="p-3 border-b space-y-3">
           <h3 className="font-bold text-sm">Reportar incidente</h3>
 
           <div className="space-y-1">
@@ -244,7 +316,7 @@ export default function PolicíaDashboard() {
       </aside>
 
       {/* ── Mapa ─────────────────────────────────────────────────────────── */}
-      <div className="flex-1">
+      <div id="pol-mapa" className="flex-1">
         <IncidentMap serviceType="policia" myLocation={myLocation} />
       </div>
     </div>
